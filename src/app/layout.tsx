@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import NextTopLoader from 'nextjs-toploader';
-import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import '../styles/globals.css';
 
 const META_THEME_COLORS = {
@@ -20,37 +19,24 @@ export const metadata: Metadata = {
     ? { metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL) }
     : {}),
   title: {
-    default: 'Shadcn Dashboard - Next.js Admin Dashboard Template',
-    template: '%s | Shadcn Dashboard'
+    default: 'SBF Pulse',
+    template: '%s | SBF Pulse'
   },
-  description:
-    'Free, open source admin dashboard starter built with Next.js 16, shadcn/ui, Tailwind CSS, and TypeScript.',
-  openGraph: {
-    title: 'Shadcn Dashboard - Next.js Admin Dashboard Template',
-    description:
-      'Free, open source admin dashboard starter built with Next.js 16, shadcn/ui, Tailwind CSS, and TypeScript.',
-    siteName: 'Shadcn Dashboard',
-    type: 'website',
-    images: [
-      {
-        url: '/shadcn-dashboard.png',
-        width: 3200,
-        height: 1600,
-        alt: 'Shadcn Dashboard overview page'
-      }
-    ]
+  description: 'Suivi des marchés, chiffrages et chantiers SBF',
+  applicationName: 'SBF Pulse',
+  appleWebApp: {
+    capable: true,
+    title: 'SBF Pulse',
+    statusBarStyle: 'default'
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Shadcn Dashboard - Next.js Admin Dashboard Template',
-    description:
-      'Free, open source admin dashboard starter built with Next.js 16, shadcn/ui, Tailwind CSS, and TypeScript.',
-    images: ['/shadcn-dashboard.png']
-  }
+  robots: { index: false, follow: false }
 };
 
 export const viewport: Viewport = {
-  themeColor: META_THEME_COLORS.light
+  themeColor: META_THEME_COLORS.light,
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover'
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -60,7 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const themeToApply = isValidTheme ? activeThemeValue! : DEFAULT_THEME;
 
   return (
-    <html lang='en' suppressHydrationWarning data-theme={themeToApply}>
+    <html lang='fr' suppressHydrationWarning data-theme={themeToApply}>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -76,26 +62,26 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body
+        // Certaines extensions de navigateur ajoutent des attributs au <body>
+        suppressHydrationWarning
         className={cn(
           'bg-background overflow-x-hidden overscroll-none font-sans antialiased',
           fontVariables
         )}
       >
         <NextTopLoader color='var(--primary)' showSpinner={false} />
-        <NuqsAdapter>
-          <ThemeProvider
-            attribute='class'
-            defaultTheme='system'
-            enableSystem
-            disableTransitionOnChange
-            enableColorScheme
-          >
-            <Providers activeThemeValue={themeToApply}>
-              <Toaster />
-              {children}
-            </Providers>
-          </ThemeProvider>
-        </NuqsAdapter>
+        <ThemeProvider
+          attribute='class'
+          defaultTheme='system'
+          enableSystem
+          disableTransitionOnChange
+          enableColorScheme
+        >
+          <Providers activeThemeValue={themeToApply}>
+            <Toaster />
+            {children}
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

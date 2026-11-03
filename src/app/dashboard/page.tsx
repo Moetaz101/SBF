@@ -1,12 +1,15 @@
-import { auth } from '@clerk/nextjs/server';
-import { redirect } from 'next/navigation';
+import PageContainer from '@/components/layout/page-container';
+import { DashboardView } from '@/features/sbf/components/dashboard-view';
 
-export default async function Dashboard() {
-  const { userId } = await auth();
+export const metadata = { title: 'Tableau de bord' };
 
-  if (!userId) {
-    return redirect('/auth/sign-in');
-  } else {
-    redirect('/dashboard/overview');
-  }
+export default function DashboardPage() {
+  return (
+    <PageContainer
+      pageTitle='Tableau de bord'
+      pageDescription='Situation en direct des marchés SBF'
+    >
+      <DashboardView />
+    </PageContainer>
+  );
 }
