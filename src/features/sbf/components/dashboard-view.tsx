@@ -11,8 +11,8 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton';
 import { SBF_CONFIG } from '@/config/sbf';
 import { useProjects } from '@/lib/sbf/api';
-import { groupAmount, kpiChecks, portfolioStats, santeDelai } from '@/lib/sbf/calc';
-import { formatDTCompact, formatDateFr, formatDateTimeFr, formatPct } from '@/lib/sbf/format';
+import { portfolioStats, santeDelai } from '@/lib/sbf/calc';
+import { formatDTCompact, formatPct } from '@/lib/sbf/format';
 import {
   carnetOffresSeries,
   carnetTrend,
@@ -20,13 +20,11 @@ import {
   pendingOffersTrend,
   pipelineByStatus,
   resultSeries,
-  upcomingOffers,
   winRateSeries,
   winRateTrend
 } from '@/lib/sbf/trends';
-import type { Project } from '@/lib/sbf/types';
 import { useToday } from '@/lib/sbf/use-today';
-import { SanteBadge, StatusBadge } from './badges';
+import { DashboardMap } from './dashboard-map';
 import { KpiCard } from './kpi-card';
 import { NewProjectButton } from './new-project-button';
 
@@ -36,8 +34,6 @@ const PERIODS = [
   { value: 12, label: '12 mois' },
   { value: 24, label: '24 mois' }
 ] as const;
-
-const DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Recharts is large, and none of it is needed to paint the KPI cards or the
@@ -69,14 +65,6 @@ export function DashboardView() {
   if (!projects?.length) return <EmptyDashboard />;
 
   const s = portfolioStats(projects, today);
-  const alertes = projects
-    .map((p) => ({
-      p,
-      sante: santeDelai(p, today),
-      ko: kpiChecks(p, today).filter((c) => c.ok === false)
-    }))
-    .filter((x) => x.sante === 'retard' || x.sante === 'attention' || x.ko.length > 0)
-    .slice(0, 6);
 
   const trends = {
     carnet: carnetTrend(projects, today),
@@ -109,15 +97,10 @@ export function DashboardView() {
       };
     });
 
-  const upcoming = upcomingOffers(projects, today, 30);
   const santeOk = projects.filter((p) => santeDelai(p, today) === 'ok').length;
 
   const openStatus = (status: string) =>
     router.push(`/dashboard/marches?status=${encodeURIComponent(status)}`);
-  const openType = (type: string) =>
-    router.push(`/dashboard/marches?type=${encodeURIComponent(type)}`);
-  const openClient = (client: string) =>
-    router.push(`/dashboard/marches?client=${encodeURIComponent(client)}`);
 
   return (
     <div className='flex flex-col gap-4'>
@@ -294,77 +277,7 @@ export function DashboardView() {
         <DelayHealth ok={santeOk} attention={s.aSurveiller.length} late={s.enRetard.length} />
       </div>
 
-      <div className='grid gap-4 lg:grid-cols-2 xl:grid-cols-3'>
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between gap-2'>
-            <CardTitle>Points d&apos;attention</CardTitle>
-            <span className='text-muted-foreground text-xs'>{alertes.length} alerte(s)</span>
-          </CardHeader>
-          <CardContent>
-            {alertes.length === 0 ? (
-              <div className='flex items-center gap-2 py-4 text-sm'>
-                <Icons.check className='size-5 text-[var(--chart-positive)]' />
-                <span className='text-muted-foreground'>
-                  Aucune alerte. Tous les KPI sont respectés.
-                </span>
-              </div>
-            ) : (
-              <ul className='divide-y'>
-                {alertes.map(({ p, sante, ko }) => (
-                  <li key={p.id}>
-                    <Link
-                      href={`/dashboard/marches/${encodeURIComponent(p.id)}`}
-                      className='hover:bg-muted/50 -mx-2 flex flex-col gap-1 rounded-md px-2 py-2.5'
-                    >
-                      <div className='flex items-center justify-between gap-2'>
-                        <span className='truncate text-sm font-medium' title={p.name}>
-                          {p.name}
-                        </span>
-                        <SanteBadge sante={sante} />
-                      </div>
-                      {ko.length > 0 && (
-                        <span className='text-muted-foreground text-xs'>
-                          {ko.map((c) => c.label).join(' · ')}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <UpcomingDeadlines rows={upcoming} today={today} />
-
-        <Card className='lg:col-span-2 xl:col-span-1'>
-          <CardHeader>
-            <CardTitle>Dernières mises à jour</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className='divide-y'>
-              {projects.slice(0, 6).map((p) => (
-                <ProjectRow key={p.id} p={p} />
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className='grid gap-4 lg:grid-cols-2'>
-        <AmountBars
-          title='Montant HT par type de travaux'
-          data={groupAmount(projects, (p) => p.type)}
-          onSelect={openType}
-          emptyText='Aucun type de travaux renseigné.'
-        />
-        <AmountBars
-          title='Montant HT par client'
-          data={groupAmount(projects, (p) => p.client).slice(0, 8)}
-          onSelect={openClient}
-          emptyText='Aucun client renseigné.'
-        />
-      </div>
+      <DashboardMap projects={projects} />
     </div>
   );
 }
@@ -454,151 +367,6 @@ function DelayHealth({ ok, attention, late }: { ok: number; attention: number; l
             <div className='text-muted-foreground text-[11px]'>En retard</div>
           </div>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function UpcomingDeadlines({
-  rows,
-  today
-}: {
-  rows: { project: Project; deadline: Date }[];
-  today: Date;
-}) {
-  return (
-    <Card>
-      <CardHeader className='flex flex-row items-center justify-between gap-2'>
-        <CardTitle>Échéances à venir</CardTitle>
-        <span className='text-muted-foreground text-xs'>30 jours</span>
-      </CardHeader>
-      <CardContent>
-        {rows.length === 0 ? (
-          <p className='text-muted-foreground py-4 text-sm'>
-            Aucune remise d’offre dans les 30 prochains jours.
-          </p>
-        ) : (
-          <ul className='divide-y'>
-            {rows.slice(0, 6).map(({ project, deadline }) => {
-              const days = Math.ceil((deadline.getTime() - today.getTime()) / DAY);
-              const tone =
-                days <= 3
-                  ? 'var(--chart-negative)'
-                  : days <= 7
-                    ? 'var(--chart-warning)'
-                    : 'var(--muted-foreground)';
-              return (
-                <li key={project.id}>
-                  <Link
-                    href={`/dashboard/marches/${encodeURIComponent(project.id)}`}
-                    className='hover:bg-muted/50 -mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2.5'
-                  >
-                    <div className='min-w-0'>
-                      <div className='truncate text-sm font-medium' title={project.name}>
-                        {project.name}
-                      </div>
-                      <div className='text-muted-foreground truncate text-xs'>
-                        {project.client ?? '—'} · {formatDateFr(project.date_remise_offre)}
-                      </div>
-                    </div>
-                    <span
-                      className='shrink-0 text-xs font-medium tabular-nums'
-                      style={{ color: tone }}
-                    >
-                      {days <= 0 ? 'Aujourd’hui' : `J-${days}`}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ProjectRow({ p }: { p: Project }) {
-  return (
-    <li>
-      <Link
-        href={`/dashboard/marches/${encodeURIComponent(p.id)}`}
-        className='hover:bg-muted/50 -mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2.5'
-      >
-        <div className='min-w-0'>
-          <div className='truncate text-sm font-medium' title={p.name}>
-            {p.name}
-          </div>
-          <div className='text-muted-foreground truncate text-xs'>
-            {p.client ?? '—'} · modifié {formatDateTimeFr(p.updated_at)}
-          </div>
-        </div>
-        <div className='flex shrink-0 flex-col items-end gap-1'>
-          <span className='text-sm font-medium tabular-nums'>{formatDTCompact(p.amount_ht)}</span>
-          <StatusBadge status={p.status} />
-        </div>
-      </Link>
-    </li>
-  );
-}
-
-function AmountBars({
-  title,
-  data,
-  onSelect,
-  emptyText
-}: {
-  title: string;
-  data: { name: string; value: number }[];
-  onSelect?: (name: string) => void;
-  emptyText?: string;
-}) {
-  const max = Math.max(...data.map((d) => d.value), 1);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className='flex flex-col gap-2'>
-        {data.length === 0 ? (
-          <p className='text-muted-foreground text-sm'>{emptyText ?? 'Aucune donnée.'}</p>
-        ) : (
-          data.map((d) => {
-            const content = (
-              <>
-                <div className='flex justify-between gap-2 text-sm'>
-                  <span className='truncate'>{d.name}</span>
-                  <span className='font-medium tabular-nums'>{formatDTCompact(d.value)}</span>
-                </div>
-                <div className='bg-muted h-2 w-full overflow-hidden rounded-full'>
-                  <div
-                    className='h-full rounded-full'
-                    style={{
-                      width: `${(d.value / max) * 100}%`,
-                      backgroundColor: 'var(--chart-info)'
-                    }}
-                  />
-                </div>
-              </>
-            );
-
-            return onSelect ? (
-              <button
-                key={d.name}
-                type='button'
-                onClick={() => onSelect(d.name)}
-                className='hover:bg-muted/50 -mx-2 flex flex-col gap-1 rounded-md px-2 py-1.5 text-left'
-              >
-                {content}
-              </button>
-            ) : (
-              <div key={d.name} className='flex flex-col gap-1'>
-                {content}
-              </div>
-            );
-          })
-        )}
       </CardContent>
     </Card>
   );

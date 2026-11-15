@@ -1,5 +1,6 @@
 'use client';
 import { Icons } from '@/components/icons';
+import { SbfLogo } from '@/components/sbf-logo';
 import {
   Sidebar,
   SidebarContent,
@@ -40,9 +41,7 @@ export default function AppSidebar() {
               size='lg'
               render={<Link href='/dashboard' aria-label={SBF_CONFIG.appName} />}
             >
-              <span className='bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold'>
-                SBF
-              </span>
+              <SbfLogo size='md' />
               <div className='grid text-left leading-tight'>
                 <span className='truncate font-semibold'>{SBF_CONFIG.appName}</span>
                 <span className='text-muted-foreground truncate text-xs'>

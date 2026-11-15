@@ -62,6 +62,7 @@ import {
   IconLock,
   IconLogin,
   IconLogout,
+  IconMapPin,
   IconMessage,
   IconMinus,
   IconMoon,
@@ -247,6 +248,9 @@ export const Icons = {
   toastWarning: IconAlertTriangle,
   toastError: IconCircleX,
   toastLoading: IconLoader2,
+
+  // Map / Location
+  mapPin: IconMapPin,
 
   // Misc
   pizza: IconPizza,

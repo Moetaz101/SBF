@@ -59,6 +59,10 @@ export function UserMenu() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
+            <Icons.settings />
+            Paramètres
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={signOut}>
             <Icons.logout />
             Se déconnecter

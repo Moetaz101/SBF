@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,6 +70,12 @@ export function LoginForm() {
       <Button type='submit' size='lg' className='h-11 text-base' disabled={loading}>
         {loading ? 'Connexion…' : 'Se connecter'}
       </Button>
+      <Link
+        href='/login/recover'
+        className='text-muted-foreground text-center text-sm hover:underline'
+      >
+        Mot de passe oublié ?
+      </Link>
     </form>
   );
 }

@@ -10,7 +10,8 @@ export const navGroups: NavGroup[] = [
     items: [
       { title: 'Tableau de bord', url: '/dashboard', icon: 'dashboard', items: [] },
       { title: 'Marchés', url: '/dashboard/marches', icon: 'workspace', items: [] },
-      { title: 'Planning', url: '/dashboard/planning', icon: 'calendar', items: [] }
+      { title: 'Planning', url: '/dashboard/planning', icon: 'calendar', items: [] },
+      { title: 'Paramètres', url: '/dashboard/settings', icon: 'settings', items: [] }
     ]
   },
   {

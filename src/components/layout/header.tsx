@@ -1,3 +1,4 @@
+import { SbfLogo } from '@/components/sbf-logo';
 import { Breadcrumbs } from '../breadcrumbs';
 import { ThemeModeToggle } from '../themes/theme-mode-toggle';
 import { Separator } from '../ui/separator';
@@ -13,9 +14,7 @@ export default function Header() {
           orientation='vertical'
           className='mr-2 hidden h-4 data-vertical:self-center md:block'
         />
-        <span className='bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-lg text-[10px] font-bold md:hidden'>
-          SBF
-        </span>
+        <SbfLogo size='sm' className='md:hidden' />
         <Breadcrumbs />
       </div>
 
