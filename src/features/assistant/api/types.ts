@@ -23,4 +23,13 @@ export interface AssistantHistoryMessage {
 
 export interface AssistantChatPayload {
   messages: AssistantHistoryMessage[];
+  includeTitle?: boolean;
+}
+
+export interface AssistantConversation {
+  id: string;
+  title: string;
+  messages: AssistantMessage[];
+  createdAt: number;
+  updatedAt: number;
 }

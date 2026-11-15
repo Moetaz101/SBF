@@ -275,6 +275,7 @@ export async function POST(request: Request) {
 
   const codeFence = '```';
   const systemText = `${ASSISTANT_SYSTEM_PROMPT}
+${payload.includeTitle ? '\nFor this first message, begin your response with exactly [TITRE] followed by a concise 3-to-6-word French conversation title and [/TITRE]. Do not put anything before or after this title marker except your answer.' : ''}
 
 # SNAPSHOT DES DONNÉES SBF (source de vérité)
 ${codeFence}json

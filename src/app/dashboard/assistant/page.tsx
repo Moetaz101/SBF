@@ -5,10 +5,7 @@ export const metadata = { title: 'Assistant IA' };
 
 export default function AssistantPage() {
   return (
-    <PageContainer
-      pageTitle='Assistant IA'
-      pageDescription='Analysez vos données SBF, générez des graphiques et préparez vos décisions'
-    >
+    <PageContainer pageTitle='Assistant IA'>
       <AssistantChat />
     </PageContainer>
   );

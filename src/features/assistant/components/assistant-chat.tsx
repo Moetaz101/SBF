@@ -35,14 +35,17 @@ import { Marker, MarkerContent, MarkerIcon } from '@/components/ui/marker';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { getSupabase } from '@/lib/supabase/client';
 import type {
   AssistantAttachmentMeta,
+  AssistantConversation,
   AssistantHistoryMessage,
   AssistantMessage
 } from '../api/types';
 import { AssistantMarkdown } from './assistant-markdown';
 
-const STORAGE_KEY = 'sbf-assistant-conversation-v1';
+const STORAGE_KEY_PREFIX = 'sbf-assistant-conversations-v2';
+const LEGACY_STORAGE_KEY = 'sbf-assistant-conversation-v1';
 const MAX_FILES = 4;
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 16 * 1024 * 1024;
@@ -117,6 +120,32 @@ function toHistory(messages: AssistantMessage[]): AssistantHistoryMessage[] {
     .filter((message) => message.status !== 'error')
     .filter((message) => message.role === 'user' || message.content.trim().length > 0)
     .map((message) => ({ role: message.role, content: message.content }));
+}
+
+function newConversation(): AssistantConversation {
+  const now = Date.now();
+  return {
+    id: createId(),
+    title: 'Nouvelle conversation',
+    messages: [],
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+function extractTitle(raw: string) {
+  const markerStart = raw.match(/^\s*\[TITRE\]/i);
+  if (!markerStart) return { title: null, content: raw };
+
+  const markerEnd = raw.match(/\[\/TITRE\]/i);
+  if (!markerEnd || markerEnd.index === undefined) return { title: null, content: '' };
+
+  const titleStart = markerStart[0].length;
+  const title = raw.slice(titleStart, markerEnd.index).trim().slice(0, 80);
+  return {
+    title: title || null,
+    content: raw.slice(markerEnd.index + markerEnd[0].length).trimStart()
+  };
 }
 
 function TypingIndicator() {
@@ -237,11 +266,14 @@ function ChatSkeleton() {
 
 export function AssistantChat() {
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
+  const [conversations, setConversations] = useState<AssistantConversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [accountId, setAccountId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -249,24 +281,28 @@ export function AssistantChat() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
+    const timer = window.setTimeout(async () => {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw) as AssistantMessage[];
-          if (Array.isArray(parsed)) {
-            setMessages(
-              parsed
-                .filter((message) => message?.role === 'user' || message?.role === 'assistant')
-                .map((message) => ({
-                  ...message,
-                  status: message.status === 'streaming' ? 'done' : message.status
-                }))
-            );
-          }
-        }
+        const {
+          data: { user }
+        } = await getSupabase().auth.getUser();
+        if (!user) return;
+
+        const storageKey = `${STORAGE_KEY_PREFIX}:${user.id}`;
+        const raw = localStorage.getItem(storageKey);
+        const parsed = raw ? (JSON.parse(raw) as AssistantConversation[]) : [];
+        const loaded = Array.isArray(parsed)
+          ? parsed.filter((conversation) => conversation && Array.isArray(conversation.messages))
+          : [];
+        const initial = loaded.length ? loaded : [newConversation()];
+        const active = initial[0];
+        setAccountId(user.id);
+        setConversations(initial);
+        setActiveConversationId(active.id);
+        setMessages(active.messages.map((message) => ({ ...message, status: 'done' })));
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
       } catch {
-        // Stockage local indisponible : la conversation reste en mémoire.
+        setConversations([newConversation()]);
       } finally {
         setIsHydrated(true);
       }
@@ -276,16 +312,28 @@ export function AssistantChat() {
   }, []);
 
   useEffect(() => {
-    if (!isHydrated || isStreaming) return;
+    if (!isHydrated || !accountId || isStreaming) return;
     const timer = window.setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}:${accountId}`, JSON.stringify(conversations));
       } catch {
         // Quota ou stockage désactivé : on ignore.
       }
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [isHydrated, isStreaming, messages]);
+  }, [accountId, conversations, isHydrated, isStreaming]);
+
+  useEffect(() => {
+    if (!isHydrated || !activeConversationId) return;
+    // oxlint-disable-next-line react/set-state-in-effect -- keep the active conversation snapshot synchronized with streamed messages
+    setConversations((current) =>
+      current.map((conversation) =>
+        conversation.id === activeConversationId
+          ? { ...conversation, messages, updatedAt: Date.now() }
+          : conversation
+      )
+    );
+  }, [activeConversationId, isHydrated, messages]);
 
   useEffect(() => {
     textareaRef.current?.focus();
@@ -362,8 +410,12 @@ export function AssistantChat() {
         const formData = new FormData();
         formData.append(
           'payload',
-          JSON.stringify({ messages: toHistory(history) } satisfies {
+          JSON.stringify({
+            messages: toHistory(history),
+            includeTitle: messages.length === 0
+          } satisfies {
             messages: AssistantHistoryMessage[];
+            includeTitle: boolean;
           })
         );
         filesToSend.forEach((file) => formData.append('files', file, file.name));
@@ -389,19 +441,31 @@ export function AssistantChat() {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let assistantText = '';
+        let rawAssistantText = '';
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          assistantText += decoder.decode(value, { stream: true });
+          rawAssistantText += decoder.decode(value, { stream: true });
+          const parsed = extractTitle(rawAssistantText);
+          if (parsed.title) {
+            setConversations((current) =>
+              current.map((conversation) =>
+                conversation.id === activeConversationId
+                  ? { ...conversation, title: parsed.title ?? conversation.title }
+                  : conversation
+              )
+            );
+          }
           setMessages((current) =>
             current.map((message) =>
-              message.id === assistantId ? { ...message, content: assistantText } : message
+              message.id === assistantId ? { ...message, content: parsed.content } : message
             )
           );
         }
 
+        const parsed = extractTitle(rawAssistantText);
+        const assistantText = parsed.content;
         setMessages((current) =>
           current.map((message) =>
             message.id === assistantId
@@ -441,27 +505,48 @@ export function AssistantChat() {
         textareaRef.current?.focus();
       }
     },
-    [input, isStreaming, messages, pendingFiles]
+    [activeConversationId, input, isStreaming, messages, pendingFiles]
   );
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
   }, []);
 
+  const selectConversation = useCallback(
+    (id: string) => {
+      if (isStreaming) return;
+      const conversation = conversations.find((item) => item.id === id);
+      if (!conversation) return;
+      setActiveConversationId(conversation.id);
+      setMessages(conversation.messages);
+      setError(null);
+      textareaRef.current?.focus();
+    },
+    [conversations, isStreaming]
+  );
+
   const clearConversation = useCallback(() => {
     abortRef.current?.abort();
+    const conversation = newConversation();
+    setConversations((current) => [conversation, ...current]);
+    setActiveConversationId(conversation.id);
     setMessages([]);
     setInput('');
     setPendingFiles([]);
     setError(null);
     setIsStreaming(false);
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      if (accountId) {
+        localStorage.setItem(
+          `${STORAGE_KEY_PREFIX}:${accountId}`,
+          JSON.stringify([conversation, ...conversations])
+        );
+      }
     } catch {
       // Stockage désactivé.
     }
     textareaRef.current?.focus();
-  }, []);
+  }, [accountId, conversations]);
 
   const copyMessage = useCallback(async (content: string) => {
     try {
@@ -488,17 +573,32 @@ export function AssistantChat() {
             </p>
           </div>
         </div>
-        <Button
-          type='button'
-          variant='ghost'
-          size='sm'
-          onClick={clearConversation}
-          disabled={isStreaming || messages.length === 0}
-        >
-          <Icons.refresh />
-          <span className='hidden sm:inline'>Nouvelle conversation</span>
-          <span className='sm:hidden'>Nouveau</span>
-        </Button>
+        <div className='flex min-w-0 items-center gap-1'>
+          <select
+            aria-label='Historique des conversations'
+            value={activeConversationId ?? ''}
+            onChange={(event) => selectConversation(event.target.value)}
+            disabled={isStreaming || !isHydrated}
+            className='bg-background text-foreground max-w-36 truncate rounded-md border px-2 py-1 text-xs'
+          >
+            {conversations.map((conversation) => (
+              <option key={conversation.id} value={conversation.id}>
+                {conversation.title}
+              </option>
+            ))}
+          </select>
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            onClick={clearConversation}
+            disabled={isStreaming || !isHydrated}
+            aria-label='Nouvelle conversation'
+          >
+            <Icons.refresh />
+            <span className='hidden sm:inline'>Nouveau</span>
+          </Button>
+        </div>
       </div>
 
       <MessageScrollerProvider autoScroll defaultScrollPosition='end' scrollEdgeThreshold={80}>
