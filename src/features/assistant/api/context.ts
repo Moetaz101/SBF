@@ -69,17 +69,19 @@ export async function buildPlatformSnapshot() {
   const [projectsResult, entriesResult, tasksResult] = await Promise.all([
     supabase
       .from('projects')
-      .select('*')
+      .select(
+        'id, name, code, client, location, type, status, passation_mode, chef_projet, amount_ht, amount_ttc, margin, date_remise_offre, date_os, duree_client, duree_sbf, avancement, montant_facture, cout_reel, notes'
+      )
       .order('updated_at', { ascending: false })
       .limit(MAX_PROJECTS),
     supabase
       .from('planning_entries')
-      .select('*')
+      .select('id, project_id, code, category, name, client, start_date, end_date, decision')
       .order('start_date', { ascending: true })
       .limit(MAX_PLANNING_ENTRIES),
     supabase
       .from('planning_tasks')
-      .select('*')
+      .select('id, project_id, title, start_date, end_date, progress, responsable')
       .order('start_date', { ascending: true })
       .limit(MAX_TASKS)
   ]);

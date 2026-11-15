@@ -15,7 +15,8 @@ const MAX_FILES = 4;
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 16 * 1024 * 1024;
 const MAX_TEXT_CHARS = 120_000;
-const MAX_HISTORY_MESSAGES = 20;
+const MAX_HISTORY_MESSAGES = 12;
+const MAX_HISTORY_CHARS = 8_000;
 
 const TEXT_EXTENSIONS = new Set(['txt', 'md', 'csv', 'tsv', 'json', 'log', 'xml', 'yaml', 'yml']);
 const EXCEL_EXTENSIONS = new Set(['xlsx', 'xls']);
@@ -110,7 +111,7 @@ function normalizeHistory(payload: AssistantChatPayload): AssistantHistoryMessag
     )
     .map((message) => ({
       role: message.role,
-      content: message.content.slice(0, 20_000)
+      content: message.content.slice(0, MAX_HISTORY_CHARS)
     }))
     .filter((message) => message.content.trim().length > 0)
     .slice(-MAX_HISTORY_MESSAGES);
@@ -295,7 +296,7 @@ ${codeFence}`;
         generationConfig: {
           temperature: 0.35,
           topP: 0.9,
-          maxOutputTokens: 8192
+          maxOutputTokens: 4096
         }
       })
     });
