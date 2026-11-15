@@ -1,0 +1,97 @@
+ Product Requirement Document (PRD) & User Needs Analysis
+Client: Ahmed Elfaleh (and the Technical/Pricing Studies Team at Société Bouzguenda Frères - SBF)
+Collaborators Mentioned: Amin Elayed (Developer/Repo manager), Moetaz Ben Hadj
+Application Goal: Centralize scattered Excel-based BTP (Building & Public Works) pricing studies, project pipelines, and deadlines into a sleek, secure, and easily accessible web platform suitable for internal management and executive presentations.
+
+1. Core Pain Points & Problems to Solve
+Data Scattering: Project data and pricing sheets are currently scattered across various individual Excel files (.xlsx), making it hard to aggregate, search, or share across the team.
+
+Lack of Visibility for Leadership: Management needs quick, synthesized answers regarding ongoing, won, or lost tenders without digging through folders.
+
+Lack of Mobility / Accessibility: Initially built as local files, the team needed a cross-device web solution that works smoothly on mobile (iOS/Android) and desktop.
+
+Security Concerns: The initial version lacked strong authentication/encryption; users expressed the need for assurances regarding data persistence and confidentiality.
+
+2. Functional Requirements & Features Requested
+A. Authentication & Security
+PIN Code Protection: Secure access to the dashboard using a 4-to-6 digit PIN code (with setup configuration on first launch and option to modify it).
+
+Session Management: Auto-lock mechanism after a period of inactivity (e.g., 10 minutes) for data confidentiality.
+
+Role/User Management: Support for multiple internal collaborators (Ahmed, Amin, Moetaz) to sync via a shared backend (Supabase / GitHub repository sync).
+
+B. "Flash Direction" Mode (Executive Search Cockpit)
+Instant Search: A high-speed search bar allowing executive management to type at least 2 letters (project name, client name, architect, BET, or location) and retrieve an instant summary card of the project.
+
+Express Summary Cards: Displays key data instantly (Project Name, Client, Status, HT/TTC Amounts, Assigned SBF Project Manager, Deadlines, Margins, and attached PDFs).
+
+C. Executive Dashboard & Key Performance Indicators (KPIs)
+The application must compute and display real-time financial and operational metrics separated logically:
+
+Carnet de Commandes (Firm Backlog): Total HT and TTC amounts for awarded/in-execution projects (Adjugé, En exécution), including the count of active affairs.
+
+Offres en Attente (Pipeline): Total HT and TTC for pending bids (En étude, Offre déposée).
+
+Offres Perdues: Total volume and count of non-awarded bids (Offre non attribuée).
+
+Marge Moyenne (Average Margin): Average pre-calculated preliminary study margin across all projects.
+
+IP (Taux d'Acceptation / Win Rate): Ratio of won projects vs. evaluated projects, benchmarked against SBF's internal target (30%).
+
+D. Visual Analytics (Charts.js Integration)
+Status Distribution: Donut chart breaking down projects by status (En étude, Offre déposée, Adjugé, En exécution, Offre non attribuée, Terminé) with interactive click-to-filter capability on the project directory.
+
+Win Rate vs. Target: Visual representation of acceptance rate against the 30% company target.
+
+Top Projects Chart: Bar chart displaying top 5 projects ranked by financial volume in MDT HT.
+
+E. Tender Submission Planning (Calendrier des Remises d'Offres)
+Planning Table: Tracks project codes (e.g., T/VRD/31/2026), project name, client, submission deadline date, and decision status (En attente, Oui, Non).
+
+Quick Add & Management: Form to add new deadlines and delete outdated ones.
+
+Printable Planning: Formatted print view (printPlanning()) to export/print clean PDF schedules for meetings.
+
+F. General Project Directory & Filtering
+Comprehensive Portfolio Table/Card List: Displays all markets (Building, VRD/Infrastructure, Hydraulic/Port, Industrial, Structures).
+
+Advanced Filters & Sorting: Filter by status, filter by project type, and sort by financial amount (ascending/descending) or alphabetically.
+
+G. Detailed Project View & PDF Attachments
+Tabbed Interface per Project:
+
+Généralités: Client, Location/Governorate, Passation Mode, Assigned SBF Project Manager (mandatory when a project is awarded).
+
+Équipe MOE: Architect, BET (Bureau d'Études), Consulting Engineer, Control Office (Bureau de Contrôle).
+
+Technique & Délais: Terrain Surface (
+m
+2
+m 
+2
+ 
+), Covered Surface (
+m
+2
+m 
+2
+ 
+), Client Deadline vs. SBF Technical Deadline (in months), OS (Ordre de Service) date.
+
+Financier & Conditions: HTVA Amount, TTC Amount (auto-calculated at 
+×
+1.19
+×1.19
+), Preliminary Margin (%), Payment Coefficient, Advance Payment, Retention Guarantee, Payment Terms, Penalties for Delay, Provisional & Definitive Cautions.
+
+PDF Document Attachments: Ability to upload, preview, download, and store project-related PDF documents (Cahier des charges, offers, or technical plans) directly within the application state/local storage.
+
+Printable Project Sheet: Clean, formatted print layout for individual project technical sheets.
+
+H. Data Management, Backup & Portability
+JSON Export/Import: Full capability to export the entire database (projects + planning) into a single .json file for backup, and import it back to sync between devices/colleagues.
+
+Demo Data Loader: Built-in reset button to reload official SBF demo datasets for testing and demonstrations.
+
+Cross-Browser & Mobile Robustness: Safe fallbacks for localStorage (memory storage fallback) and robust PDF iframe printing to ensure flawless operation on iOS (Safari) and Android devices.
+

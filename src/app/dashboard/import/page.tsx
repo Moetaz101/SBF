@@ -7,7 +7,7 @@ export default function ImportPage() {
   return (
     <PageContainer
       pageTitle='Importer les données'
-      pageDescription='Reprise du fichier JSON du prototype SBFPulse'
+      pageDescription='CSV, Excel, TXT ou JSON — les colonnes sont détectées et associées automatiquement.'
     >
       <ImportView />
     </PageContainer>

@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 function isActive(pathname: string, url: string) {
+  if (url.includes('?')) return false;
   if (url === '/dashboard') return pathname === url;
   if (url === '/dashboard/marches') {
     return pathname.startsWith(url) && pathname !== '/dashboard/marches/nouveau';
@@ -31,7 +32,7 @@ export default function AppSidebar() {
   const email = useCurrentUserEmail();
 
   return (
-    <Sidebar collapsible='icon'>
+    <Sidebar collapsible='icon' className='print:hidden'>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

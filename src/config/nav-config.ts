@@ -10,12 +10,11 @@ export const navGroups: NavGroup[] = [
     items: [
       { title: 'Tableau de bord', url: '/dashboard', icon: 'dashboard', items: [] },
       { title: 'Marchés', url: '/dashboard/marches', icon: 'workspace', items: [] },
-      { title: 'Nouveau marché', url: '/dashboard/marches/nouveau', icon: 'plusCircle', items: [] },
       { title: 'Planning', url: '/dashboard/planning', icon: 'calendar', items: [] }
     ]
   },
   {
     label: 'Données',
-    items: [{ title: 'Importer (JSON)', url: '/dashboard/import', icon: 'upload', items: [] }]
+    items: [{ title: 'Importer', url: '/dashboard/import', icon: 'upload', items: [] }]
   }
 ];

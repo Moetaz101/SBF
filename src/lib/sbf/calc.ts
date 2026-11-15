@@ -1,4 +1,10 @@
-import { SBF_CONFIG, STATUTS_ACTIFS, STATUTS_EN_COURS_OFFRE, STATUTS_GAGNES } from '@/config/sbf';
+import {
+  SBF_CONFIG,
+  STATUTS_ACTIFS,
+  STATUTS_EN_COURS_OFFRE,
+  STATUTS_GAGNES,
+  STATUTS_PERDUS
+} from '@/config/sbf';
 import { parseISODate } from './format';
 import type { Project } from './types';
 
@@ -20,12 +26,7 @@ export function montantTTC(p: Project) {
   return null;
 }
 
-/** Marge prévue en DT = HT × marge % */
-export function margePrevueDT(p: Project) {
-  if (!p.amount_ht || p.margin === null || p.margin === undefined) return null;
-  return (p.amount_ht * p.margin) / 100;
-}
-
+/** Montant de l'avance en DT */
 export function montantAvance(p: Project) {
   const ttc = montantTTC(p);
   if (!ttc || !p.avance) return null;
@@ -109,12 +110,6 @@ export function kpiChecks(p: Project, today = new Date()): KpiCheck[] {
   const checks: KpiCheck[] = [];
 
   checks.push({
-    label: `Marge prévue ≥ ${SBF_CONFIG.margeObjectif} %`,
-    ok: p.margin === null ? null : p.margin >= SBF_CONFIG.margeObjectif,
-    detail: p.margin === null ? 'Marge non renseignée' : `Marge prévue : ${p.margin} %`
-  });
-
-  checks.push({
     label: 'Objectif SBF ≤ délai client',
     ok: p.duree_sbf && p.duree_client ? p.duree_sbf <= p.duree_client : null,
     detail:
@@ -134,16 +129,6 @@ export function kpiChecks(p: Project, today = new Date()): KpiCheck[] {
           ? 'Date OS ou délai manquant'
           : `Avancement ${Math.round(p.avancement ?? 0)} % pour ${Math.round(temps)} % du délai écoulé`
     });
-
-    const mr = margeReellePct(p);
-    checks.push({
-      label: 'Marge réelle ≥ marge prévue',
-      ok: mr === null || p.margin === null ? null : mr >= p.margin,
-      detail:
-        mr === null
-          ? 'Aucun décompte saisi'
-          : `Marge réelle : ${mr.toFixed(1)} % (prévue ${p.margin ?? '—'} %)`
-    });
   }
 
   return checks;
@@ -157,10 +142,9 @@ export function portfolioStats(projects: Project[], today = new Date()) {
   const actifs = projects.filter((p) => STATUTS_ACTIFS.includes(p.status));
   const offres = projects.filter((p) => STATUTS_EN_COURS_OFFRE.includes(p.status));
   const gagnes = projects.filter((p) => STATUTS_GAGNES.includes(p.status));
-  const perdus = projects.filter((p) => p.status === 'Perdu');
+  const perdus = projects.filter((p) => STATUTS_PERDUS.includes(p.status));
 
   const montantActifs = sum(actifs, (p) => p.amount_ht);
-  const margePrevue = sum(actifs, margePrevueDT);
   const facture = sum(projects, (p) => p.montant_facture);
   const couts = sum(projects, (p) => p.cout_reel);
 
@@ -175,10 +159,12 @@ export function portfolioStats(projects: Project[], today = new Date()) {
     actifs,
     offres,
     montantActifs,
+    montantActifsTTC: sum(actifs, montantTTC),
     montantOffres: sum(offres, (p) => p.amount_ht),
+    montantOffresTTC: sum(offres, montantTTC),
+    montantPerdus: sum(perdus, (p) => p.amount_ht),
+    montantPerdusTTC: sum(perdus, montantTTC),
     carnet: sum(actifs, resteARealiser),
-    margePrevue,
-    margeMoyenne: montantActifs ? (margePrevue / montantActifs) * 100 : null,
     facture,
     couts,
     resultat: facture - couts,

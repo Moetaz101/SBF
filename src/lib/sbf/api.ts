@@ -6,6 +6,8 @@ import { getSupabase } from '@/lib/supabase/client';
 import type {
   PlanningTask,
   PlanningTaskInput,
+  PlanningEntry,
+  PlanningEntryInput,
   Project,
   ProjectDocument,
   ProjectInput
@@ -17,6 +19,7 @@ export const keys = {
   projects: ['projects'] as const,
   project: (id: string) => ['projects', id] as const,
   tasks: ['tasks'] as const,
+  planningEntries: ['planning-entries'] as const,
   documents: (projectId: string) => ['documents', projectId] as const
 };
 
@@ -129,6 +132,48 @@ export function useDeleteTask() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Planning hebdomadaire                                               */
+/* ------------------------------------------------------------------ */
+
+export function usePlanningEntries() {
+  return useQuery({
+    queryKey: keys.planningEntries,
+    queryFn: async () =>
+      unwrap<PlanningEntry[]>(
+        await getSupabase()
+          .from('planning_entries')
+          .select('*')
+          .order('start_date', { ascending: true })
+          .order('code', { ascending: true })
+      )
+  });
+}
+
+export function useSavePlanningEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: PlanningEntryInput) => {
+      const { id, ...rest } = input;
+      const query = id
+        ? getSupabase().from('planning_entries').update(rest).eq('id', id).select().single()
+        : getSupabase().from('planning_entries').insert(rest).select().single();
+      return unwrap<PlanningEntry>(await query);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.planningEntries })
+  });
+}
+
+export function useDeletePlanningEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      unwrap(await getSupabase().from('planning_entries').delete().eq('id', id));
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.planningEntries })
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /* Documents PDF                                                       */
 /* ------------------------------------------------------------------ */
 
@@ -230,6 +275,9 @@ export function useRealtimeSync() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'planning_tasks' }, () => {
         qc.invalidateQueries({ queryKey: keys.tasks });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'planning_entries' }, () => {
+        qc.invalidateQueries({ queryKey: keys.planningEntries });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'project_documents' }, () => {
         qc.invalidateQueries({ queryKey: ['documents'] });

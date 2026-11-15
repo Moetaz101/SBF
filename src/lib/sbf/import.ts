@@ -1,3 +1,4 @@
+import { normalizeStatus } from '@/config/sbf';
 import { parseNumber } from './format';
 import type { ProjectInput } from './types';
 
@@ -6,10 +7,16 @@ const TEXT_FIELDS: Record<string, keyof ProjectInput> = {
   id: 'id',
   name: 'name',
   description: 'description',
+  code: 'code',
+  reference: 'code',
+  ref: 'code',
   client: 'client',
   location: 'location',
   type: 'type',
   status: 'status',
+  passationMode: 'passation_mode',
+  passation: 'passation_mode',
+  modePassation: 'passation_mode',
   chefProjet: 'chef_projet',
   architecte: 'architecte',
   bet: 'bet',
@@ -27,6 +34,8 @@ const NUMBER_FIELDS: Record<string, keyof ProjectInput> = {
   margin: 'margin',
   avance: 'avance',
   retenueGarantie: 'retenue_garantie',
+  cautionProvisoire: 'caution_provisoire',
+  cautionDefinitive: 'caution_definitive',
   dureeClient: 'duree_client',
   dureeSbf: 'duree_sbf',
   surfTerrain: 'surf_terrain',
@@ -133,6 +142,8 @@ export function mapProject(raw: Record<string, unknown>): ImportedProject {
   }
 
   if (!project.name) project.name = String(raw.titre ?? raw.title ?? project.id ?? 'Sans nom');
+  // Les anciens statuts du prototype sont convertis au vocabulaire PRD.
+  project.status = normalizeStatus(String(project.status ?? ''));
   project.extra = extra;
 
   return { project: project as unknown as ProjectInput, files };

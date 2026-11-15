@@ -7,16 +7,16 @@ import { cn } from '@/lib/utils';
 
 const ITEMS = [
   { href: '/dashboard', label: 'Accueil', icon: Icons.dashboard, exact: true },
-  { href: '/dashboard/marches', label: 'Marchés', icon: Icons.workspace },
-  { href: '/dashboard/marches/nouveau', label: 'Nouveau', icon: Icons.plusCircle, exact: true },
-  { href: '/dashboard/planning', label: 'Planning', icon: Icons.calendar }
+  { href: '/dashboard/marches', label: 'Marchés', icon: Icons.workspace, exact: false },
+  { href: '/dashboard/marches?new=1', label: 'Nouveau', icon: Icons.plusCircle, exact: false },
+  { href: '/dashboard/planning', label: 'Planning', icon: Icons.calendar, exact: false }
 ];
 
 /** Barre de navigation en bas de l'écran, uniquement sur téléphone */
 export function MobileNav() {
   const pathname = usePathname();
   return (
-    <nav className='bg-background/95 fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden'>
+    <nav className='bg-background/95 fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden print:hidden'>
       <ul className='grid grid-cols-4'>
         {ITEMS.map((item) => {
           const active = item.exact

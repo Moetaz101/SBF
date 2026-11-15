@@ -5,7 +5,10 @@ export const metadata = { title: 'Planning' };
 
 export default function PlanningPage() {
   return (
-    <PageContainer pageTitle='Planning' pageDescription='Calendrier d’exécution des chantiers'>
+    <PageContainer
+      pageTitle='Planning'
+      pageDescription='Planning hebdomadaire des remises d’offres'
+    >
       <PlanningOverview />
     </PageContainer>
   );

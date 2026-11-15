@@ -1,7 +1,8 @@
-import Link from 'next/link';
-import { Icons } from '@/components/icons';
+import { Suspense } from 'react';
 import PageContainer from '@/components/layout/page-container';
-import { buttonVariants } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { MarchesHeaderActions } from '@/features/sbf/components/marches-header-actions';
+import { NewProjectDialog } from '@/features/sbf/components/new-project-dialog';
 import { ProjectsList } from '@/features/sbf/components/projects-list';
 
 export const metadata = { title: 'Marchés' };
@@ -12,15 +13,14 @@ export default function MarchesPage() {
       pageTitle='Marchés'
       pageDescription='Appels d’offres, chiffrages et contrats'
       pageHeaderAction={
-        <Link
-          href='/dashboard/marches/nouveau'
-          className={buttonVariants() + ' hidden md:inline-flex'}
-        >
-          <Icons.add /> Nouveau marché
-        </Link>
+        <Suspense fallback={<NewProjectDialog triggerClassName='hidden md:inline-flex' />}>
+          <MarchesHeaderActions />
+        </Suspense>
       }
     >
-      <ProjectsList />
+      <Suspense fallback={<Skeleton className='h-24 rounded-xl' />}>
+        <ProjectsList />
+      </Suspense>
     </PageContainer>
   );
 }

@@ -639,3 +639,24 @@
     -webkit-text-fill-color: currentColor;
   }
 }
+
+/* Impression des rapports (Planning → PDF via la boîte de dialogue du navigateur). */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  [data-slot='sidebar'] {
+    display: none !important;
+  }
+
+  [data-slot='sidebar-inset'] {
+    margin: 0 !important;
+    background: #fff !important;
+  }
+}

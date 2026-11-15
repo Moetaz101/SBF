@@ -15,7 +15,6 @@ import {
   dateFinSbf,
   joursRestants,
   kpiChecks,
-  margePrevueDT,
   margeReellePct,
   montantAvance,
   montantRetenue,
@@ -102,6 +101,7 @@ export function ProjectFiche({ id }: { id: string }) {
             <StatusBadge status={p.status} />
             <SanteBadge sante={sante} />
             {p.type && <span className='text-muted-foreground text-xs'>{p.type}</span>}
+            {p.code && <span className='text-muted-foreground text-xs'>Réf. {p.code}</span>}
           </div>
           <h1 className='text-xl leading-tight font-semibold sm:text-2xl'>{p.name}</h1>
           <p className='text-muted-foreground mt-1 text-sm'>
@@ -123,30 +123,28 @@ export function ProjectFiche({ id }: { id: string }) {
       </div>
 
       {/* Chiffres clés */}
-      <div className='grid grid-cols-2 gap-3 lg:grid-cols-4'>
+      <div className='grid grid-cols-2 gap-3 lg:grid-cols-3'>
         <KpiCard
           label='Montant HT'
           value={formatDT(p.amount_ht)}
           hint={`TTC ${formatDT(montantTTC(p))}`}
-        />
-        <KpiCard
-          label='Marge prévue'
-          value={formatPct(p.margin)}
-          hint={formatDT(margePrevueDT(p))}
-          tone={
-            p.margin === null ? 'default' : p.margin >= SBF_CONFIG.margeObjectif ? 'good' : 'warn'
-          }
+          variant='indigo'
+          icon={Icons.briefcase}
         />
         <KpiCard
           label='Résultat réel à date'
           value={formatDT(resultat)}
           hint={mr === null ? 'Aucun décompte saisi' : `Marge réelle ${formatPct(mr)}`}
           tone={resultat === null ? 'default' : resultat >= 0 ? 'good' : 'bad'}
+          variant='sky'
+          icon={Icons.cash}
         />
         <KpiCard
           label='Remise de l’offre'
           value={formatDateFr(p.date_remise_offre)}
           hint={p.date_os ? `OS le ${formatDateFr(p.date_os)}` : 'OS non notifié'}
+          variant='amber'
+          icon={Icons.calendar}
         />
       </div>
 
@@ -230,9 +228,6 @@ export function ProjectFiche({ id }: { id: string }) {
               <Field label='Montant HT'>{formatDT(p.amount_ht)}</Field>
               <Field label='Montant TTC'>{formatDT(montantTTC(p))}</Field>
               <Field label='Coefficient de règlement'>{formatNumber(p.coef_reglement)}</Field>
-              <Field label='Marge prévue'>
-                {formatPct(p.margin)} · {formatDT(margePrevueDT(p))}
-              </Field>
               <Field label='Décomptes facturés'>{formatDT(p.montant_facture)}</Field>
               <Field label='Coûts réels'>{formatDT(p.cout_reel)}</Field>
               <Field label='Résultat réel'>
@@ -260,6 +255,9 @@ export function ProjectFiche({ id }: { id: string }) {
                   ? `${formatPct(p.retenue_garantie)} · ${formatDT(montantRetenue(p))}`
                   : '—'}
               </Field>
+              <Field label='Mode de passation'>{p.passation_mode}</Field>
+              <Field label='Caution provisoire'>{formatDT(p.caution_provisoire)}</Field>
+              <Field label='Caution définitive'>{formatDT(p.caution_definitive)}</Field>
               <Field label='Paiement'>{p.modalite_paiement}</Field>
               <Field label='Pénalités de retard'>{p.penalite_retard}</Field>
               <Field label='Surface terrain'>

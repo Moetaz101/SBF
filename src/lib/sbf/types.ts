@@ -4,10 +4,15 @@ export interface Project {
   name: string;
   description: string | null;
 
+  /** Code du marché (ex. T/VRD/31/2026) */
+  code: string | null;
+
   client: string | null;
   location: string | null;
   type: string | null;
   status: string;
+  /** Mode de passation (appel d'offres ouvert, consultation…) */
+  passation_mode: string | null;
 
   chef_projet: string | null;
   architecte: string | null;
@@ -22,6 +27,8 @@ export interface Project {
 
   avance: number | null;
   retenue_garantie: number | null;
+  caution_provisoire: number | null;
+  caution_definitive: number | null;
   modalite_paiement: string | null;
   penalite_retard: string | null;
 
@@ -60,6 +67,37 @@ export interface PlanningTask {
 }
 
 export type PlanningTaskInput = Omit<PlanningTask, 'id' | 'created_at' | 'updated_at'> & {
+  id?: string;
+};
+
+/** Décision sur une remise d'offre */
+export type SubmissionDecision = 'En attente' | 'Oui' | 'Non';
+
+/** Ligne d'un planning hebdomadaire de remise d'offre. */
+export interface PlanningEntry {
+  id: string;
+  project_id: string | null;
+  code: string;
+  category: string;
+  entry_number: number;
+  year: number;
+  name: string;
+  client: string | null;
+  start_date: string;
+  end_date: string;
+  decision: SubmissionDecision;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * `code`, `entry_number` et `year` sont calculés par la base :
+ * le client n'envoie que les données métier.
+ */
+export type PlanningEntryInput = Omit<
+  PlanningEntry,
+  'id' | 'code' | 'entry_number' | 'year' | 'created_at' | 'updated_at'
+> & {
   id?: string;
 };
 

@@ -3,12 +3,27 @@ import type { Sante } from '@/lib/sbf/calc';
 
 const STATUS_STYLES: Record<string, string> = {
   'En étude': 'bg-slate-500/10 text-slate-700 dark:text-slate-300',
+  'Offre déposée': 'bg-blue-500/10 text-blue-700 dark:text-blue-300',
+  Adjugé: 'bg-violet-500/10 text-violet-700 dark:text-violet-300',
+  'En exécution': 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+  'Offre non attribuée': 'bg-red-500/10 text-red-700 dark:text-red-300',
+  Terminé: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+  Abandonné: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400',
+  // Anciens statuts (données historiques / imports non normalisés)
   'Offre remise': 'bg-blue-500/10 text-blue-700 dark:text-blue-300',
   Attribué: 'bg-violet-500/10 text-violet-700 dark:text-violet-300',
-  'En exécution': 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-  Terminé: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-  Perdu: 'bg-red-500/10 text-red-700 dark:text-red-300',
-  Abandonné: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400'
+  Perdu: 'bg-red-500/10 text-red-700 dark:text-red-300'
+};
+
+/** Couleurs des graphiques (statuts), pilotées par le thème actif. */
+export const STATUS_CHART_COLORS: Record<string, string> = {
+  'En étude': 'var(--chart-neutral)',
+  'Offre déposée': 'var(--chart-info)',
+  Adjugé: 'var(--chart-violet)',
+  'En exécution': 'var(--chart-warning)',
+  'Offre non attribuée': 'var(--chart-negative)',
+  Terminé: 'var(--chart-positive)',
+  Abandonné: 'var(--chart-neutral)'
 };
 
 export function StatusBadge({ status, className }: { status: string; className?: string }) {

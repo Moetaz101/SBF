@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { Icons } from '@/components/icons';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { STATUTS } from '@/config/sbf';
 import { useProjects } from '@/lib/sbf/api';
 import { santeDelai } from '@/lib/sbf/calc';
-import { formatDTCompact, formatDateFr, formatPct } from '@/lib/sbf/format';
+import { formatDTCompact, formatDateFr } from '@/lib/sbf/format';
 import type { Project } from '@/lib/sbf/types';
 import { useToday } from '@/lib/sbf/use-today';
 import { SanteBadge, StatusBadge } from './badges';
@@ -27,11 +28,13 @@ function haystack(p: Project) {
   return normalize(
     [
       p.name,
+      p.code,
       p.description,
       p.client,
       p.location,
       p.type,
       p.status,
+      p.passation_mode,
       p.chef_projet,
       p.architecte,
       p.bet,
@@ -47,11 +50,24 @@ function haystack(p: Project) {
 
 export function ProjectsList() {
   const { data: projects, isLoading, error } = useProjects();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [query, setQuery] = useState('');
-  const [status, setStatus] = useState('');
-  const [type, setType] = useState('');
+  const status = searchParams.get('status') ?? '';
+  const type = searchParams.get('type') ?? '';
+  const client = searchParams.get('client') ?? '';
   const deferredQuery = useDeferredValue(query);
   const today = useToday();
+
+  /** Filtre stocké dans l'URL : les graphiques du tableau de bord peuvent le piloter. */
+  function setParam(key: 'status' | 'type' | 'client', value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set(key, value);
+    else params.delete(key);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
   const types = useMemo(
     () => [...new Set((projects ?? []).map((p) => p.type).filter(Boolean))] as string[],
@@ -63,11 +79,12 @@ export function ProjectsList() {
     return (projects ?? []).filter((p) => {
       if (status && p.status !== status) return false;
       if (type && p.type !== type) return false;
+      if (client && p.client !== client) return false;
       if (!words.length) return true;
       const h = haystack(p);
       return words.every((w) => h.includes(w));
     });
-  }, [projects, deferredQuery, status, type]);
+  }, [projects, deferredQuery, status, type, client]);
 
   return (
     <div className='flex flex-col gap-3'>
@@ -87,7 +104,7 @@ export function ProjectsList() {
         <div className='grid grid-cols-2 gap-2 sm:flex'>
           <NativeSelect
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => setParam('status', e.target.value)}
             className='w-full sm:w-44'
             aria-label='Filtrer par statut'
           >
@@ -100,7 +117,7 @@ export function ProjectsList() {
           </NativeSelect>
           <NativeSelect
             value={type}
-            onChange={(e) => setType(e.target.value)}
+            onChange={(e) => setParam('type', e.target.value)}
             className='w-full sm:w-48'
             aria-label='Filtrer par type'
           >
@@ -113,6 +130,20 @@ export function ProjectsList() {
           </NativeSelect>
         </div>
       </div>
+
+      {client && (
+        <div className='flex flex-wrap items-center gap-2 text-xs'>
+          <span className='text-muted-foreground'>Filtre client :</span>
+          <button
+            type='button'
+            onClick={() => setParam('client', '')}
+            className='bg-muted hover:bg-muted/70 inline-flex items-center gap-1 rounded-full px-2 py-1'
+          >
+            {client}
+            <Icons.close className='size-3' />
+          </button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className='flex flex-col gap-2'>
@@ -152,7 +183,7 @@ export function ProjectsList() {
                         <span className='font-semibold tabular-nums'>
                           {formatDTCompact(p.amount_ht)}
                         </span>
-                        <span className='text-muted-foreground'>Marge {formatPct(p.margin)}</span>
+                        <span className='text-muted-foreground'>{p.type ?? 'Marché'}</span>
                       </div>
                     </Link>
                   </li>
@@ -168,7 +199,6 @@ export function ProjectsList() {
                       <th className='px-3 py-2 font-medium'>Client</th>
                       <th className='px-3 py-2 font-medium'>Statut</th>
                       <th className='px-3 py-2 text-right font-medium'>Montant HT</th>
-                      <th className='px-3 py-2 text-right font-medium'>Marge</th>
                       <th className='px-3 py-2 font-medium'>Remise offre</th>
                       <th className='px-3 py-2 font-medium'>Délais</th>
                     </tr>
@@ -184,7 +214,7 @@ export function ProjectsList() {
                             {p.name}
                           </Link>
                           <div className='text-muted-foreground truncate text-xs'>
-                            {[p.type, p.location].filter(Boolean).join(' · ')}
+                            {[p.code, p.type, p.location].filter(Boolean).join(' · ')}
                           </div>
                         </td>
                         <td className='px-3 py-2'>{p.client ?? '—'}</td>
@@ -194,7 +224,6 @@ export function ProjectsList() {
                         <td className='px-3 py-2 text-right font-medium tabular-nums'>
                           {formatDTCompact(p.amount_ht)}
                         </td>
-                        <td className='px-3 py-2 text-right tabular-nums'>{formatPct(p.margin)}</td>
                         <td className='px-3 py-2 whitespace-nowrap'>
                           {formatDateFr(p.date_remise_offre)}
                         </td>
