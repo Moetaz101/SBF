@@ -14,6 +14,17 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
+    label: 'Analyse',
+    items: [
+      {
+        title: 'Assistant IA',
+        url: '/dashboard/assistant',
+        icon: 'sparkles',
+        items: []
+      }
+    ]
+  },
+  {
     label: 'Données',
     items: [{ title: 'Importer', url: '/dashboard/import', icon: 'upload', items: [] }]
   }

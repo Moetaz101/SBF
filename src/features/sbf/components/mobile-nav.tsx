@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 const ITEMS = [
   { href: '/dashboard', label: 'Accueil', icon: Icons.dashboard, exact: true },
   { href: '/dashboard/marches', label: 'Marchés', icon: Icons.workspace, exact: false },
-  { href: '/dashboard/marches?new=1', label: 'Nouveau', icon: Icons.plusCircle, exact: false },
+  { href: '/dashboard/assistant', label: 'Assistant', icon: Icons.sparkles, exact: false },
   { href: '/dashboard/planning', label: 'Planning', icon: Icons.calendar, exact: false }
 ];
 
